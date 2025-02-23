@@ -3,11 +3,11 @@ package sco.carlukesoftware.batteryinformation.ui.screens
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,9 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -39,17 +39,20 @@ import kotlinx.coroutines.flow.collectLatest
 import sco.carlukesoftware.batteryinformation.R
 import sco.carlukesoftware.batteryinformation.battery.BatteryBroadcastReceiver
 import sco.carlukesoftware.batteryinformation.model.BatteryInformation
-import sco.carlukesoftware.batteryinformation.ui.components.AnimatedWaveCircle
 import sco.carlukesoftware.batteryinformation.ui.components.BatteryInfoComponent
 import sco.carlukesoftware.batteryinformation.ui.components.EmbossedText
+import sco.carlukesoftware.batteryinformation.ui.components.MoonToSunSwitcher
+import sco.carlukesoftware.batteryinformation.ui.components.PercentageLevel
 import sco.carlukesoftware.batteryinformation.ui.theme.BatteryInformationTheme
-import sco.carlukesoftware.batteryinformation.ui.theme.Rose100
+import sco.carlukesoftware.batteryinformation.ui.theme.Shapes
 import sco.carlukesoftware.batteryinformation.utils.brushedMetal
 import sco.carlukesoftware.batteryinformation.utils.drawAnimationBorder
 
+
 @Composable
 fun BatteryInfoScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     var batteryInformation by remember {
@@ -80,6 +83,10 @@ fun BatteryInfoScreen(
             }
         }
 
+    var isMoon by remember {
+        mutableStateOf(false)
+    }
+
     LaunchedEffect(Unit) {
         batteryInfoFlow.collectLatest { info ->
             batteryInformation = info
@@ -101,78 +108,137 @@ fun BatteryInfoScreen(
             modifier = modifier
                 .fillMaxSize()
         ) {
-            Row(
+
+            ConstraintLayout(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(
+                        shape = Shapes.large
+                    )
                     .brushedMetal(),
-                verticalAlignment = Alignment
-                    .CenterVertically
             ) {
+                val (title, switcher) = createRefs()
+
                 EmbossedText(
                     text = "Battery Status",
                     modifier = Modifier
-                        .padding(
-                            start = 8.dp,
-                            top = 8.dp,
-                            bottom = 8.dp
-                        ),
+                        .constrainAs(title) {
+                            top.linkTo(
+                                anchor = parent.top,
+                                margin = 8.dp
+                            )
+                            bottom.linkTo(
+                                anchor = parent.bottom,
+                                margin = 8.dp
+                            )
+                            start.linkTo(
+                                anchor = parent.start,
+                                margin = 8.dp
+                            )
+                        },
                     style = MaterialTheme.typography.headlineLarge
+                )
+
+
+                MoonToSunSwitcher(
+                    isMoon = isMoon,
+                    color = if (isMoon) Color.White else Color.Yellow,
+                    modifier = Modifier
+                        .constrainAs(switcher) {
+                            top.linkTo(
+                                anchor = parent.top,
+                                margin = 8.dp
+                            )
+                            bottom.linkTo(
+                                anchor = parent.bottom,
+                                margin = 8.dp
+                            )
+                            end.linkTo(
+                                anchor = parent.end,
+                                margin = 8.dp
+                            )
+                        }
+                        .clickable {
+                            isMoon = !isMoon
+                            onDarkModeChanged(isMoon)
+                        }
                 )
             }
 
-            AnimatedWaveCircle(
+            val circleSize = 300.dp
+
+            PercentageLevel(
+                percent = batteryInformation.level,
                 modifier = Modifier
-                    .width(200.dp)
-                    .height(200.dp)
+                    .width(circleSize)
+                    .height(circleSize)
                     .padding(16.dp)
+                    .align(
+                        alignment = Alignment.CenterHorizontally
+                    )
                     .drawAnimationBorder(
                         strokeWidth = 18.dp,
-                        shape = RoundedCornerShape(100.dp),
+                        shape = RoundedCornerShape(circleSize),
                         enabled = batteryInformation.isCharging,
-                    ),
-                waterLevel = batteryInformation.level / 100f,
-                waveColor = Color.Red,
-                circleColor = Rose100
-            )
+                    )            )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(1 / 3f)
             ) {
                 BatteryInfoComponent(
                     modifier = Modifier
+                        .padding(
+                            horizontal = 4.dp
+                        )
                         .height(96.dp)
-                        .fillMaxWidth(0.5f),
+                        .fillMaxWidth(0.5f)
+                        .clip(
+                            shape = Shapes.large
+                        )
+                        .brushedMetal(),
                     imageRes = R.drawable.bolt,
                     header = "Voltage",
-                    value = "${batteryInformation.voltage}V"
+                    value = "${batteryInformation.voltageMillivolts}V"
                 )
 
                 BatteryInfoComponent(
                     modifier = Modifier
+                        .padding(
+                            horizontal = 4.dp
+                        )
                         .height(96.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .clip(
+                            shape = Shapes.large
+                        )
+                        .brushedMetal(),
                     imageRes = R.drawable.thermometer,
                     header = "Temperature",
-                    value = "${batteryInformation.temperature}°C"
+                    value = "${batteryInformation.temperatureCelsius}°C"
                 )
             }
 
             Spacer(
                 modifier = Modifier
-                    .height(8.dp)
+                    .height(2.dp)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(1 / 2f)
             ) {
                 BatteryInfoComponent(
                     modifier = Modifier
+                        .padding(
+                            horizontal = 4.dp
+                        )
                         .height(96.dp)
-                        .fillMaxWidth(0.5f),
+                        .fillMaxWidth(0.5f)
+                        .clip(
+                            shape = Shapes.large
+                        )
+                        .brushedMetal(),
                     imageRes = R.drawable.technology,
                     header = "Technology",
                     value = batteryInformation.technology,
@@ -182,8 +248,15 @@ fun BatteryInfoScreen(
 
                 BatteryInfoComponent(
                     modifier = Modifier
+                        .padding(
+                            horizontal = 4.dp
+                        )
                         .height(96.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .clip(
+                            shape = Shapes.large
+                        )
+                        .brushedMetal(),
                     imageRes = R.drawable.plugin,
                     header = "Plug status",
                     value = if (batteryInformation.isPowerConnected) "plugged-in" else "unplugged",
@@ -203,13 +276,14 @@ fun BatteryInfoScreen(
                 Column {
                     Text("Battery Level: ${batteryInformation.level}%")
                     Text("Charging: ${batteryInformation.isCharging}")
-                    Text("USB Charging: ${batteryInformation.isCharging && batteryInformation.isUsbCharging}")
-                    Text("AC Charging: ${batteryInformation.isCharging && batteryInformation.isAcCharging}")
-                    Text("Temperature: ${batteryInformation.temperature}°C")
-                    Text("Voltage: ${batteryInformation.voltage}V")
+                    Text("Plugged type: ${batteryInformation.pluggedType.description}")
+                    Text("Temperature: ${batteryInformation.temperatureCelsius}°C")
+                    Text("Voltage: ${batteryInformation.voltageMillivolts}V")
+                    Text("Charging Status: ${batteryInformation.chargingStatus.description}")
+                    Text("Battery Health: ${batteryInformation.batteryHealth.description}")
                     Text("Technology: ${batteryInformation.technology}")
                     Text("Power Connected: ${batteryInformation.isPowerConnected}")
-                    Text("Low Battery: ${batteryInformation.isLowBattery}")
+                    Text("Low Battery: ${batteryInformation.isBatteryLow}")
                 }
             }
         }

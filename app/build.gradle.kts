@@ -50,6 +50,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.annotation)
+    implementation(libs.androidx.constraintlayout)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.bundles.koin)
