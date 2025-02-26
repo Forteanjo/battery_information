@@ -1,5 +1,6 @@
 package sco.carlukesoftware.batteryinformation.battery
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import sco.carlukesoftware.batteryinformation.model.BatteryHealth
 import sco.carlukesoftware.batteryinformation.model.BatteryInformation
+import sco.carlukesoftware.batteryinformation.model.BatteryProperties
 import sco.carlukesoftware.batteryinformation.model.ChargingStatus
 import sco.carlukesoftware.batteryinformation.model.PluggedType
 
@@ -59,8 +61,30 @@ class BatteryBroadcastReceiver(
             }
 
             Intent.ACTION_BATTERY_CHANGED -> {
+                val batteryProperties: BatteryProperties =
+                    with(context.batteryManager) {
+                        val capacity = getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                        val chargeCounter =
+                            getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+                        val energyCounter =
+                            getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
+                        val currentAverage =
+                            getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+                        val currentNow = getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+
+                        BatteryProperties(
+                            capacity = capacity,
+                            chargeCounter = chargeCounter,
+                            energyCounter = energyCounter,
+                            currentAverage = currentAverage,
+                            currentNow = currentNow,
+                            chargeTimeRemaining = computeChargeTimeRemaining()
+                        )
+                    }
+
                 intent.let {
                     val level = it.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+                    val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
                     val batteryStatus = it.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
                     val isCharging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING ||
                             batteryStatus == BatteryManager.BATTERY_STATUS_FULL
@@ -70,27 +94,38 @@ class BatteryBroadcastReceiver(
                     val isBatteryLow = it.getBooleanExtra(BatteryManager.EXTRA_BATTERY_LOW, false)
                     val temperature = it.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0).div(10f)
                     val voltage = it.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0).div(1000)
+                    val present = it.getBooleanExtra(BatteryManager.EXTRA_PRESENT, false)
                     val chargingStatus = it.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
                     val batteryHealth = it.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)
                     val technology =
                         it.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY) ?: "<Unknown>"
-                    //val chargingTimeRemaining = BatteryManager.computeChargeTimeRemaining()
 
                     onBatteryInfoChanged(
                         BatteryInformation(
                             isPowerConnected = isCharging || isUsbCharging || isAcCharging,
                             level = level,
+                            scale = scale,
                             pluggedType = PluggedType.fromPluggedType(chargePlug),
                             isBatteryLow = isBatteryLow,
                             temperatureCelsius = temperature,
                             voltageMillivolts = voltage,
                             chargingStatus = ChargingStatus.fromChargingStatus(chargingStatus),
                             batteryHealth = BatteryHealth.fromBatteryHealth(batteryHealth),
-                            technology = technology
+                            technology = technology,
+                            present = present,
+                            batteryProperties = batteryProperties
                         )
                     )
                 }
             }
         }
     }
+
+    /**
+     * get BatteryManager
+     */
+    private inline val Context.batteryManager
+        @SuppressLint("InlinedApi")
+        get() = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+
 }
