@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -273,17 +276,43 @@ fun BatteryInfoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Column {
-                    Text("Battery Level: ${batteryInformation.level}%")
-                    Text("Charging: ${batteryInformation.isCharging}")
-                    Text("Plugged type: ${batteryInformation.pluggedType.description}")
-                    Text("Temperature: ${batteryInformation.temperatureCelsius}°C")
-                    Text("Voltage: ${batteryInformation.voltageMillivolts}V")
-                    Text("Charging Status: ${batteryInformation.chargingStatus.description}")
-                    Text("Battery Health: ${batteryInformation.batteryHealth.description}")
-                    Text("Technology: ${batteryInformation.technology}")
-                    Text("Power Connected: ${batteryInformation.isPowerConnected}")
-                    Text("Low Battery: ${batteryInformation.isBatteryLow}")
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .padding(
+                            horizontal = 4.dp
+                        )
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .verticalScroll(
+                            state = scrollState,
+                            enabled = true
+                        )
+                ) {
+                    with(batteryInformation) {
+                        Text("Battery Level: ${level}%")
+                        Text("Charging: $isCharging")
+                        Text("Plugged type: ${pluggedType.description}")
+                        Text("Temperature: ${temperatureCelsius}°C")
+                        Text("Voltage: ${voltageMillivolts}V")
+                        Text("Charging Status: ${chargingStatus.description}")
+                        Text("Battery Health: ${batteryHealth.description}")
+                        Text("Technology: $technology")
+                        Text("Power Connected: $isPowerConnected")
+                        Text("Battery present: $present")
+                        Text("Low Battery: $isBatteryLow")
+                        Text("Max Battery level: ${scale}%")
+
+                        with(batteryProperties) {
+                            Text("Battery Capacity: ${capacity}%")
+                            Text("Battery Capacity: $chargeCounterString")
+                            Text("Battery Capacity: $energyCounterString")
+                            Text("Average Current: $currentAverage µA")
+                            Text("Current: $currentNow µA")
+                            Text("Charge time remaining: $chargeTimeRemaining ms")
+                            Text("Charge time remaining: $chargingTimeLeft")
+                        }
+                    }
                 }
             }
         }
