@@ -1,9 +1,13 @@
 package sco.carlukesoftware.batteryinformation
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,29 +26,48 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import sco.carlukesoftware.batteryinformation.ui.screens.BatteryInfoScreen
 import sco.carlukesoftware.batteryinformation.ui.theme.BatteryInformationTheme
 import sco.carlukesoftware.batteryinformation.utils.drawAnimationBorder
 
 class MainActivity : ComponentActivity() {
 
+//    private val requestPermissionLauncher =
+//        registerForActivityResult(ActivityResultContracts
+//            .RequestPermission()) { isGranted: Boolean ->
+//                if (isGranted) {
+//                    // Permission is granted. Continue the action or workflow in your app.
+//                    println("Battery Stats permission granted")
+//                } else {
+//                    // Explain to the user that the feature is unavailable because the
+//                    // feature requires a permission that the user has denied.
+//                    println("Battery Stats permission denied")
+//                }
+//            }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
 
+        setContent {
             val darkTheme = isSystemInDarkTheme()
             var isDarkTheme by remember {
                 mutableStateOf(darkTheme)
             }
+
+            //RequestBatteryStatePermission()
 
             BatteryInformationTheme(isDarkTheme) {
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                 ) { innerPadding ->
-                    val screenWidth = LocalConfiguration.current.screenWidthDp
+                    val screenWidth = LocalConfiguration.current
+                        .screenWidthDp
 
                     BatteryInfoScreen(
                         modifier = Modifier
@@ -59,7 +82,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+//    @Composable
+//    fun RequestBatteryStatePermission() {
+//        val context = LocalContext.current
+//        when {
+//            ContextCompat.checkSelfPermission(
+//                context,
+//                Manifest.permission.BATTERY_STATS
+//            ) == PackageManager.PERMISSION_GRANTED -> {
+//                // You can use the API that requires the permission.
+//                println("Battery State permission already granted")
+//            }
+//
+//            else -> {
+//                // You can directly ask for the permission.
+//                // The registered ActivityResultCallback gets the result of this request.
+//                requestPermissionLauncher.launch(
+//                    Manifest.permission.BATTERY_STATS
+//                )
+//            }
+//        }
+//    }
+
 }
+
 
 @Composable
 fun DisplayCircle(modifier: Modifier = Modifier) {
