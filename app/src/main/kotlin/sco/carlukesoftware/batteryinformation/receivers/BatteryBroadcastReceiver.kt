@@ -1,4 +1,4 @@
-package sco.carlukesoftware.batteryinformation.battery
+package sco.carlukesoftware.batteryinformation.receivers
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
