@@ -12,15 +12,17 @@ enum class ThermalStatus(val description: String) {
     SHUTDOWN("Shutdown"),
     UNKNOWN("Unknown");
 
-    fun fromThermalStatus(thermalStatus: Int): ThermalStatus =
-        when (thermalStatus) {
-            PowerManager.THERMAL_STATUS_NONE -> NONE
-            PowerManager.THERMAL_STATUS_LIGHT -> LIGHT
-            PowerManager.THERMAL_STATUS_MODERATE -> MODERATE
-            PowerManager.THERMAL_STATUS_SEVERE -> SEVERE
-            PowerManager.THERMAL_STATUS_CRITICAL -> CRITICAL
-            PowerManager.THERMAL_STATUS_EMERGENCY -> EMERGENCY
-            PowerManager.THERMAL_STATUS_SHUTDOWN -> SHUTDOWN
-            else -> UNKNOWN
-        }
+    companion object {
+        fun fromThermalStatus(thermalStatus: Int): ThermalStatus =
+            when (thermalStatus) {
+                PowerManager.THERMAL_STATUS_NONE -> NONE
+                PowerManager.THERMAL_STATUS_LIGHT -> LIGHT
+                PowerManager.THERMAL_STATUS_MODERATE -> MODERATE
+                PowerManager.THERMAL_STATUS_SEVERE -> SEVERE
+                PowerManager.THERMAL_STATUS_CRITICAL -> CRITICAL
+                PowerManager.THERMAL_STATUS_EMERGENCY -> EMERGENCY
+                PowerManager.THERMAL_STATUS_SHUTDOWN -> SHUTDOWN
+                else -> UNKNOWN
+            }
+    }
 }

@@ -1,11 +1,11 @@
 package sco.carlukesoftware.batteryinformation.ui.screens
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
+import android.os.Build
 import android.os.PowerManager
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,16 +39,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.koinInject
 import sco.carlukesoftware.batteryinformation.R
-import sco.carlukesoftware.batteryinformation.receivers.BatteryBroadcastReceiver
 import sco.carlukesoftware.batteryinformation.model.BatteryInformation
-import sco.carlukesoftware.batteryinformation.receivers.DeviceIdleModeReceiver
+import sco.carlukesoftware.batteryinformation.model.ThermalStatus
+import sco.carlukesoftware.batteryinformation.receivers.BatteryBroadcastReceiver
 import sco.carlukesoftware.batteryinformation.receivers.PowerSaveModeReceiver
 import sco.carlukesoftware.batteryinformation.receivers.ScreenOnOffReceiver
 import sco.carlukesoftware.batteryinformation.ui.components.BatteryInfoComponent
@@ -59,11 +59,14 @@ import sco.carlukesoftware.batteryinformation.ui.theme.BatteryInformationTheme
 import sco.carlukesoftware.batteryinformation.ui.theme.Shapes
 import sco.carlukesoftware.batteryinformation.utils.brushedMetal
 import sco.carlukesoftware.batteryinformation.utils.drawAnimationBorder
+import sco.carlukesoftware.batteryinformation.viewmodels.PowerManagerViewModel
 
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun BatteryInfoScreen(
     modifier: Modifier = Modifier,
+    powerManagerViewModel: PowerManagerViewModel = koinInject(),
     onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -71,39 +74,10 @@ fun BatteryInfoScreen(
         mutableStateOf(BatteryInformation())
     }
 
-    var thermalStatusListener: PowerManager.OnThermalStatusChangedListener
-
     val batteryInfoFlow: Flow<BatteryInformation> =
         remember {
             callbackFlow {
                 batteryInfoReceiver(
-                    context = context
-                )
-            }
-        }
-
-    val deviceIdleFLow: Flow<Boolean> =
-        remember {
-            callbackFlow {
-                deviceIdleReceiver(
-                    context = context
-                )
-            }
-        }
-
-    val powerSaveModeFlow: Flow<Boolean> =
-        remember {
-            callbackFlow {
-                powerSaveModeReceiver(
-                    context = context
-                )
-            }
-        }
-
-    val screenOnOffFlow: Flow<Boolean> =
-        remember {
-            callbackFlow {
-                screenOnOffReceived(
                     context = context
                 )
             }
@@ -335,6 +309,15 @@ fun BatteryInfoScreen(
                             Text("Charge time remaining: $chargeTimeRemaining ms")
                             Text("Charge time remaining: $chargingTimeLeft")
                         }
+
+                        Text("Device is idle mode: ${if(powerManagerViewModel.isDeviceIdle.value) "Yes" else "No"}")
+                        Text("Device is power save mode: ${if(powerManagerViewModel.isPowerSaveMode.value) "Yes" else "No"}")
+                        Text("Device is screen on: ${if(powerManagerViewModel.isScreenOn.value) "Yes" else "No"}")
+                        Text("Device is thermal throttled: ${if(powerManagerViewModel.thermalStatus.value != 0) "Yes" else "No"}")
+
+                        powerManagerViewModel.listenThermalStatus(context)
+                        val thermalStatus = powerManagerViewModel.thermalStatus.value
+                        Text("Device is thermal throttled: ${ThermalStatus.fromThermalStatus(thermalStatus).description}")
                     }
                 }
             }
@@ -342,6 +325,7 @@ fun BatteryInfoScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Preview(showBackground = true)
 @Composable
 private fun BatterInfoScreenPreview() {
@@ -362,59 +346,6 @@ private suspend fun ProducerScope<BatteryInformation>.batteryInfoReceiver(contex
             addAction(Intent.ACTION_BATTERY_LOW)
             addAction(Intent.ACTION_BATTERY_OKAY)
             addAction(Intent.ACTION_BATTERY_CHANGED)
-        }
-
-    ContextCompat.registerReceiver(context, receiver, filter,
-        ContextCompat.RECEIVER_EXPORTED)
-
-    awaitClose {
-        context.unregisterReceiver(receiver)
-    }
-}
-
-private suspend fun ProducerScope<Boolean>.deviceIdleReceiver(context: Context) {
-    val receiver = DeviceIdleModeReceiver { isIdling ->
-        trySend(isIdling)
-    }
-
-    val filter = IntentFilter(
-        PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED
-    )
-
-    ContextCompat.registerReceiver(context, receiver, filter,
-        ContextCompat.RECEIVER_EXPORTED)
-
-    awaitClose {
-        context.unregisterReceiver(receiver)
-    }
-}
-
-private suspend fun ProducerScope<Boolean>.powerSaveModeReceiver(context: Context) {
-    val receiver = PowerSaveModeReceiver { isPowerSaveMode ->
-        trySend(isPowerSaveMode)
-    }
-
-    val filter = IntentFilter(
-        PowerManager.ACTION_POWER_SAVE_MODE_CHANGED
-    )
-
-    ContextCompat.registerReceiver(context, receiver, filter,
-        ContextCompat.RECEIVER_EXPORTED)
-
-    awaitClose {
-        context.unregisterReceiver(receiver)
-    }
-}
-
-private suspend fun ProducerScope<Boolean>.screenOnOffReceived(context: Context) {
-    val receiver = ScreenOnOffReceiver { isInteractive ->
-        trySend(isInteractive)
-    }
-
-    val filter = IntentFilter()
-        .apply {
-            Intent.ACTION_SCREEN_ON
-            Intent.ACTION_SCREEN_OFF
         }
 
     ContextCompat.registerReceiver(context, receiver, filter,

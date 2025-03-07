@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import sco.carlukesoftware.batteryinformation.utils.listeners.IListenerOnUpdate
 
 /**
  * Converts a listener-based API to a Flow.
@@ -15,9 +16,9 @@ import kotlinx.coroutines.flow.conflate
  * @return A Flow that emits values from the listener.
  */
 fun <T> listenerToFlow(
-    registerListener: (listener: T) -> Unit,
-    unregisterListener: (listener: T) -> Unit,
-    createListener: (sendValue: (T) -> Unit) -> T
+    registerListener: (T) -> Unit,
+    unregisterListener: (T) -> Unit,
+    createListener: ((T) -> Unit) -> T
 ): Flow<T> = callbackFlow {
     // Create the listener instance
     val listener = createListener { value ->

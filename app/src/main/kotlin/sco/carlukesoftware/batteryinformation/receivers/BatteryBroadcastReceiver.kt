@@ -30,7 +30,7 @@ import sco.carlukesoftware.batteryinformation.model.PluggedType
  *                                 whenever a battery-related event occurs.
  */
 class BatteryBroadcastReceiver(
-    private val onBatteryInfoChanged: (BatteryInformation) -> Unit
+    private val onBatteryInfoChanged: (BatteryInformation) -> Unit = { }
 ) : BroadcastReceiver() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)

@@ -2,12 +2,14 @@ package sco.carlukesoftware.batteryinformation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,19 +38,20 @@ import sco.carlukesoftware.batteryinformation.utils.drawAnimationBorder
 
 class MainActivity : ComponentActivity() {
 
-//    private val requestPermissionLauncher =
-//        registerForActivityResult(ActivityResultContracts
-//            .RequestPermission()) { isGranted: Boolean ->
-//                if (isGranted) {
-//                    // Permission is granted. Continue the action or workflow in your app.
-//                    println("Battery Stats permission granted")
-//                } else {
-//                    // Explain to the user that the feature is unavailable because the
-//                    // feature requires a permission that the user has denied.
-//                    println("Battery Stats permission denied")
-//                }
-//            }
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts
+            .RequestPermission()) { isGranted: Boolean ->
+                if (isGranted) {
+                    // Permission is granted. Continue the action or workflow in your app.
+                    println("Wake lock permission granted")
+                } else {
+                    // Explain to the user that the feature is unavailable because the
+                    // feature requires a permission that the user has denied.
+                    println("Wake lock permission denied")
+                }
+            }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,7 +62,8 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(darkTheme)
             }
 
-            //RequestBatteryStatePermission()
+            RequestWakeLockPermission()
+            RequestBatteryOptimizationsPermission()
 
             BatteryInformationTheme(isDarkTheme) {
                 Scaffold(
@@ -82,27 +86,50 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    @Composable
-//    fun RequestBatteryStatePermission() {
-//        val context = LocalContext.current
-//        when {
-//            ContextCompat.checkSelfPermission(
-//                context,
-//                Manifest.permission.BATTERY_STATS
-//            ) == PackageManager.PERMISSION_GRANTED -> {
-//                // You can use the API that requires the permission.
-//                println("Battery State permission already granted")
-//            }
-//
-//            else -> {
-//                // You can directly ask for the permission.
-//                // The registered ActivityResultCallback gets the result of this request.
-//                requestPermissionLauncher.launch(
-//                    Manifest.permission.BATTERY_STATS
-//                )
-//            }
-//        }
-//    }
+    @Composable
+    fun RequestWakeLockPermission() {
+        println("Wake Lock permission")
+        val context = LocalContext.current
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WAKE_LOCK
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // You can use the API that requires the permission.
+                println("Wake Lock permission already granted")
+            }
+            else -> {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                requestPermissionLauncher.launch(
+                    Manifest.permission.WAKE_LOCK
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun RequestBatteryOptimizationsPermission() {
+        println("Battery Optimizations")
+        val context = LocalContext.current
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // You can use the API that requires the permission.
+                println("Battery Optimizations permission already granted")
+            }
+
+            else -> {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                requestPermissionLauncher.launch(
+                    Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                )
+            }
+        }
+    }
 
 }
 
